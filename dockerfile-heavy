@@ -1,0 +1,27 @@
+# Use Ubuntu 22.04 as the base image
+FROM ubuntu:22.04
+
+# Set up working directory
+WORKDIR /app
+
+# Install Python and dependencies via apt
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    libusb-1.0-0-dev \
+    kmod \
+    python3-usb \
+    python3-pil \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy the entire project into the container
+COPY . .
+
+# Install Python dependencies via pip
+RUN pip3 install pyhidapi pyusb pillow
+
+# Commented out entrypoint for manual operation
+# ENTRYPOINT ["python3", "led-badge-11x44.py"]
+
+# Default command
+CMD ["/bin/bash"]

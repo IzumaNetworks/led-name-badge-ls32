@@ -28,6 +28,66 @@ In both configurations, the badge identifies itself on the USB as
 There are many different versions of LED Badges on the market.
 This one uses a USB-HID interface, while others use USB-Serial (see references below).
 
+## Container deployment
+To use docker to deploy on Linux do the following
+### notes: 
+We don't have a LSicroelectronics
+
+We have a bluetooth thing: https://wch-ic.com/products/CH579.html
+lsusb
+
+it does generate a HID device at the right addresses as described above.  But it goes away after writing to it.  Not sure all this will work.
+
+### Izuma Edge way
+TODO
+### Developer way
+To scp files from your local system to a remote machine not on your local lan, I suggest you setup a reverse tunnel from the remote.   for instance, from the nuc I do this:
+1. use the portal login and get a terminal
+2. tunnel to your build machine:
+```
+ssh -p <port_to_your_ssh_server> -R<reverse_port_tunnel_on_your_local_machine>:localhost:<port_on_remote_machine_with_ssh> me@mylocalboxIP
+ssh -p xxxx -Rxxxxx:localhost:22 me@localboxIP
+ssh -p 5533 -R34343:localhost:22 travis@<myip>
+```
+so that last line assumes your machine that your on now, has its ssh running on 5533 instead of 22.  It assumes your name is travis@<travisip> is the username on your local machine  It assumes that the remote machine (nuc) has ssh running on 22.  It assumes that you want a reverse tunnel to hit your local box 34343.  once that is set in the portal, and your successful at logins in, you can do this from your local machine to ssh back into the remote.
+```ssh -p 34343 user@localhost```
+Now your back on the nuc.
+#### Makefile building
+* make preqs: ensures you have a buildx environment
+* make build: builds the container for both amd64 and arm64
+* make scp: will secure copy the build to a remote machine.
+
+#### running
+On the machine with the build do the following
+1. start the docker container.  
+  * This is enough permissions to talk to the hidraw0
+```
+docker run -it \
+  --device /dev/hidraw0 \
+  --device /dev/bus/usb \
+  izumanetworks/led-name-badge:latest-amd64 /bin/bash
+```
+  * This is necessary to pull in and out modules... we think.  its still not working from within the container.  
+```
+docker run -it \
+  --device /dev/hidraw0 \
+  --device /dev/bus/usb \
+  --cap-add=SYS_MODULE \
+  --cap-add=SYS_ADMIN \
+  --cap-add=SYS_RAWIO \
+  --cap-add=NET_ADMIN \
+  --security-opt seccomp=unconfined \
+  izumanetworks/led-name-badge:latest-amd64 /bin/bash
+```
+  * this just gives you full permissions so you can truly debug the program and ignore security
+```docker run -it --privilege izumanetworks/led-name-badge:latest-amd64 /bin/bash```
+2. run the python command
+```python led-badge-11x44.py -m 6 -s 8 "Hello" "Ryu!"```
+3. there is something wrong with the app.  It kills the device /dev/hidraw0.   To bring that hidraw0 back, you can flip the module.  but this doesn't work from the container yet.
+```
+
+```
+
 ## Command Line Installation and Usage
 
 ### User access to badge on all Linuxes
